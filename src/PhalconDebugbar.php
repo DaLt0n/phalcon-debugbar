@@ -35,6 +35,7 @@ use Snowair\Debugbar\DataCollector\ConfigCollector;
 use Snowair\Debugbar\DataCollector\LogsCollector;
 use Snowair\Debugbar\DataCollector\MessagesCollector;
 use Snowair\Debugbar\DataCollector\PhalconRequestCollector;
+use Snowair\Debugbar\DataCollector\ApplicationCollector;
 use Snowair\Debugbar\DataCollector\QueryCollector;
 use Snowair\Debugbar\DataCollector\RouteCollector;
 use Snowair\Debugbar\DataCollector\SessionCollector;
@@ -128,6 +129,12 @@ class PhalconDebugbar extends DebugBar {
         }
         if ($this->shouldCollect('default_request', false)) {
             $req = new RequestDataCollector();
+            if (!isset($this->collectors[$req->getName()])) {
+                $this->addCollector($req);
+            }
+        }
+        if ($this->shouldCollect('application', false)) {
+            $req = new ApplicationCollector();
             if (!isset($this->collectors[$req->getName()])) {
                 $this->addCollector($req);
             }
@@ -598,6 +605,20 @@ CLASS;
                 );
             }
         }
+        
+        if ($this->shouldCollect('application', true) and !$this->hasCollector('application')) {
+            try {
+                $this->addCollector(new ApplicationCollector($this->di['application'],$response,$this->di));
+            } catch (\Exception $e) {
+                $this->addException(
+                    new Exception(
+                        'Cannot add ApplicationCollector to Phalcon Debugbar: ' . $e->getMessage(),
+                        $e->getCode(),
+                        $e
+                    )
+                );
+            }
+        }
 
         if( $this->hasCollector('pdo') ){
             /** @var Profiler $profiler */
@@ -923,3 +944,4 @@ CLASS;
     }
 
 }
+
